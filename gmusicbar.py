@@ -33,15 +33,15 @@ def getch():
   return c
 
 def login(api):
-  home = expanduser('~')
-  configfile = open(home + '/.gmusicbarrc')
+  configfile = open(expanduser('~/.gmusicbarrc'))
+  if configfile:
+    for a in configfile:
+      line = a.split(' ')
+      if (line[0] == 'email'):
+        email = line[1]
 
-  for a in configfile:
-    line = a.split(' ')
-    if (line[0] == 'email'):
-      email = line[1]
-    else:
-      email = raw_input("Email: ")
+  if not email:
+    email = raw_input("Email: ")
 
   password = getpass.getpass()
   api.login(email, password)
@@ -53,7 +53,7 @@ def index_playlists(playlists):
   return indexed
 
 def choose_playlist(api, indexed, playlists):
-  print "Choose a playlist:\n"
+  print "Choose a playlist:"
   i = 0;
   for playlist in indexed:
     print str(i) + ": " + playlist
@@ -61,7 +61,7 @@ def choose_playlist(api, indexed, playlists):
   while 1:
     c = getch()
     d = int(c)
-    if d >= 0 and d <= i:
+    if d >= 0 and d < i:
       break
   return playlists[indexed[d]]
 
@@ -75,10 +75,21 @@ def main():
   login(api)
   playlists = api.get_all_playlist_ids().pop('user')
   indexed_playlist_names = index_playlists(playlists)
-  curlist = choose_playlist(api, indexed_playlist_names, playlists)
-  print curlist
+  curlist = choose_playlist(api, indexed_playlist_names, playlists)[0]
+  songs = api.get_playlist_songs(curlist)
+  print songs
+
+  curpos = 0;
+  cursongid = songs[curpos]['id']
+  cursongurl = api.get_stream_url(cursongid)
+  print cursongurl
+  #cursong = play(cursongurl)
 
   while 1:
+    if cursong.poll() is not None:
+      curpos += 1
+      cursongid = songs[curpos]['id']
+      cursong = play(get_stream_url(cursongid))
     c = getch() 
     if (c == 'q'):
       api.logout() 
